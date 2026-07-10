@@ -1,6 +1,7 @@
 import json
 import unicodedata
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import streamlit as st
 import joblib
@@ -101,10 +102,10 @@ with tab1:
         default=vecindarios[:4]
     )
 
-    if seleccion_vecindarios:
-        dff = df[df["Neighborhood"].isin(seleccion_vecindarios)]
-    else:
-        dff = df.copy()
+   if not seleccion_vecindarios:
+    seleccion_vecindarios = vecindarios
+
+dff = df[df["Neighborhood"].isin(seleccion_vecindarios)].copy()
 
     col1, col2, col3 = st.columns(3)
 
@@ -151,12 +152,30 @@ with tab1:
         st.plotly_chart(fig_box, use_container_width=True)
 
     with c4:
-        fig_scatter = px.scatter(
-            dff,
-            x="Gr Liv Area",
-            y="SalePrice",
-            title="Área habitable vs precio de venta",
-            trendline="ols"
+fig_scatter = px.scatter(
+    dff,
+    x="Gr Liv Area",
+    y="SalePrice",
+    title="Área habitable vs precio de venta"
+)
+
+datos_tendencia = dff[["Gr Liv Area", "SalePrice"]].dropna()
+
+if len(datos_tendencia) >= 2:
+    x = datos_tendencia["Gr Liv Area"].to_numpy()
+    y = datos_tendencia["SalePrice"].to_numpy()
+
+    pendiente, intercepto = np.polyfit(x, y, 1)
+
+    x_linea = np.linspace(x.min(), x.max(), 100)
+    y_linea = pendiente * x_linea + intercepto
+
+    fig_scatter.add_scatter(
+        x=x_linea,
+        y=y_linea,
+        mode="lines",
+        name="Tendencia"
+    )
         )
         st.plotly_chart(fig_scatter, use_container_width=True)
 
